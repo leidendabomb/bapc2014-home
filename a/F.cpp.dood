@@ -1,0 +1,111 @@
+// Team: :(){:|:&};: #dabomb
+// 💩
+#include <iostream>
+#include <vector>
+#include <set>
+#include <cstdlib>
+#include <utility>
+#include <cmath>
+#include <map>
+#include <list>
+#include <algorithm>
+#include <cstring>
+#include <queue>
+
+using namespace std;
+
+int sink(set<int>* ducks, map<int, int>& sunk, const int n) {
+	int sunkCount = 0;
+	// determine edges
+	queue<pair<int, int>> edges; // original edge & current
+	for (int i = 0; i < n; i++) {
+		if (ducks[i].size()) {
+			edges.push(make_pair(i, i));
+		}
+	}
+	cerr << edges.size() << "edges" << endl;
+	while (!edges.empty()) {
+		auto cur = edges.front();
+		edges.pop();
+		auto& curDuck = ducks[cur.second];
+		int boatNum = *curDuck.begin();
+		sunkCount++;
+		if (boatNum == -1) {
+			// This is a "special" boat, ignore.
+			continue;
+		}
+		auto boat = boats[boatNum];
+		int nextDuck;
+		// remove this edge and add the next one
+		if (boat.first == cur.second) {
+			nextDuck = boat.second;
+		} else {
+			nextDuck = boat.first;
+		}
+		sunk[cur.first]++;
+		auto boatPos = ducks[nextDuck].find(boatNum);
+		if (boatPos != ducks[nextDuck].end()) {
+			ducks[nextDuck].erase(boatPos);
+		} else {
+			cerr << "Duck " << nextDuck << " does not have boat " << boatNum << endl;
+		}
+		if(ducks[nextDuck].size() == 1) {
+			// This duck has been compromised
+			edges.push(make_pair(cur.first, nextDuck));
+		}
+	}
+
+	cerr << "sunk: " << sunkCount << endl;
+
+	return sunkCount;
+}
+
+int main()
+{
+	int numEntries = 0;
+	cin >> numEntries;
+	cin.ignore();
+
+	while (numEntries--)
+	{
+		cerr << "case " << numEntries << endl;
+		int n,m,k;
+		cin >> n >> m >> k;
+		// clear all ducks
+		for (int i = 0; i < n; i++) {
+			ducks[i].clear();
+			ducks2[i].clear();
+		}
+		// Read the boats
+		for (int i = 0; i < m; i++) {
+			int a, b;
+			cin >> a >> b;
+			a--;
+			b--;
+			boats[i] = make_pair(a, b);
+			ducks[a].insert(i);
+			ducks[b].insert(i);
+			ducks2[a].insert(i);
+			ducks2[b].insert(i);
+		}
+
+		map<int, int> sunk;
+		sink(ducks, sunk, n);
+		
+		vector<pair<int, int>> longestEdges;
+		for (auto& cur : sunk) {
+			longestEdges.push_back(make_pair(cur.second, cur.first));
+		}
+		sort(longestEdges.begin(), longestEdges.end(), greater<pair<int, int>>());
+		// Add boats to the new edges
+		for (int i = 0; i < k && i < (int) longestEdges.size(); i++) {
+			auto& cur = longestEdges[i];
+			ducks2[cur.second].insert(-1);
+		}
+
+		int count = sink(ducks2, sunk, n);
+		cerr << count << endl;
+	}
+
+	return 0;
+}
